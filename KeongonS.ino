@@ -14,6 +14,8 @@ PCB_ver
 #define right_B_pin 8                 // 8번 디지털핀(right_B_pin)              :: MOTER 출력
 #define left_pwm_pin 9                // 9번 디지털핀(left_pwm_pin)             :: MOTER PWM
 #define right_pwm_pin 10              // 10번 디지털핀(right_pwm_pin)           :: MOTER PWM
+#define wave_sensor_trig_pin 5        // 5번 디지털핀(wave_sensor_trig_pin)     :: Wave_Sensor
+#define wave_sensor_echo_pin 11       // 11번 디지털핀(wave_sensor_echo_pin)    :: Wave_Sensor
 
 // 아날로그핀 설계
 #define button_pin A0                 // A0번 아날로그핀(button_pin)             :: 푸쉬스위치 입력
@@ -59,6 +61,8 @@ void setup()
   pinMode(right_B_pin, OUTPUT);               // right_B_pin
   pinMode(left_pwm_pin, OUTPUT);              // left MOTER PWM
   pinMode(right_pwm_pin, OUTPUT);             // right MOTER PWM
+  pinMode(wave_sensor_trig_pin, OUTPUT);      // Wave_Sensor
+  pinMode(wave_sensor_echo_pin, INPUT);       // Wave_Sensor
 
   // LED 모드선택(최초 부팅시)
   blink_fn(button_state_cnt);          
@@ -131,12 +135,78 @@ void mode_setting_fn(int button_state_cnt)
   }
   else if (button_state_cnt == 2)
   {
-
+    // avoid_run_fn
+    avoid_run_fn();
   }
   else if (button_state_cnt == 3)
   {
 
   }
+}
+
+
+//-----
+// avoid_run_fn
+void avoid_run_fn()
+{
+  // 거리계산
+  int distance_measure = distance_measure_fn();
+  Serial.print("거리 : ");
+  Serial.println(distance_measure);  
+  // 블루투스시리얼[하드웨어] 프린터 알림
+  Serial1.println(distance_measure);  
+
+  if (distance_measure == 0)
+  {
+    Serial.println("중지");
+
+    left_moter_stop_fn();
+    right_moter_stop_fn();
+  }  
+
+  else if (distance_measure > 30)
+  {
+    Serial.println("전진");
+
+    left_moter_F_fn(L_moter_max_speed);
+    right_moter_F_fn(R_moter_max_speed);    
+  }
+
+  else if (distance_measure <= 30)
+  {
+    Serial.println("우회전");
+
+    left_moter_F_fn(L_moter_max_speed);
+    right_moter_stop_fn();
+  }
+}
+
+//-----
+// 거리측정 센서
+int distance_measure_fn(void)
+{
+  // 초음파센서
+  float distance;
+  float duration;
+  digitalWrite(wave_sensor_trig_pin, LOW);
+  delayMicroseconds(5);  
+  digitalWrite(wave_sensor_trig_pin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(wave_sensor_trig_pin, LOW);
+
+  duration = pulseIn(wave_sensor_echo_pin, HIGH, 20000);
+  // 0.01초(사양서의 측정범위 :3.5메타까지 측정, 왕복 7메타, 마이크로초(20000)
+
+  distance = duration * 17 / 1000;  // duration을 연산하여 센싱한 거리값을 distance에 저장
+  return distance;
+  /*
+   거리 = 시간 * 속도
+   속도는 음속 340m/sec 시간 * 340m이고 cm단위로 바꾸기 위해 34000cm로 변환합니다.
+   시간 값이 저장된 duration은 마이크로초 단위로 저장되어 있어, 변환하기 위해 1000000을 나눠줍니다.
+   그럼 시간 * 34000 / 1000000이라는 값이 나오고, 정리하여 거리 * 34 / 1000이 됩니다.
+   하지만 시간은 장애물에 닿기까지와 돌아오기까지 총 두 번의 시간이 걸렸으므로 2를 나누어줍니다.
+   그럼 시간 * 17 / 1000이라는 공식이 나옵니다.
+  */
 }
 
 
