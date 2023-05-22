@@ -132,6 +132,76 @@ void BLE_rx_tx_fn()
     Serial.write(Serial1.read());       //블루투스측 내용을 시리얼모니터에 출력
   }
 
+  // Serial.println("bluetooth_string : " + bluetooth_string);       //시리얼모니터에 bluetooth_string 값 출력
+  if (bluetooth_string != "")         //bluetooth_string 값이 있다면
+  { 
+    // 실행(1~9)(전화버튼 기준):: ASCII
+
+    // 2 = "50"
+    if (bluetooth_string == "50")
+    {
+      Serial.println("전진");
+
+      // BUZZER ON/OFF 함수
+      button_state = 0;
+
+      left_moter_F_fn();
+      right_moter_F_fn();
+    }
+
+    // 4 = "52"
+    else if (bluetooth_string == "52")
+    {
+      Serial.println("좌회전");
+
+      // BUZZER ON/OFF 함수
+      button_state = 0;
+
+      left_moter_stop_fn();
+      right_moter_F_fn();
+    }
+
+    // 5 = "53"
+    else if (bluetooth_string == "53")
+    {
+      Serial.println("중지");
+
+      // BUZZER ON/OFF 함수
+      button_state = 0;
+
+      left_moter_stop_fn();
+      right_moter_stop_fn();
+    }
+    
+    // 6 = "54"
+    else if (bluetooth_string == "54")
+    {
+      Serial.println("우회전");
+
+      // BUZZER ON/OFF 함수
+      button_state = 0;
+
+      left_moter_F_fn();
+      right_moter_stop_fn();
+    }
+
+    // 8 = "56"
+    else if (bluetooth_string == "56")
+    {
+      Serial.println("후진");
+
+      // BUZZER ON/OFF 함수
+      button_state = 1;
+
+      left_moter_R_fn();
+      right_moter_R_fn();
+    }
+
+    // BUZZER ON/OFF 함수
+    buzzer_fn(button_state);          
+
+  }  
+
 /*
 "No line ending [9600 baud]"
 AT  (OK)
@@ -171,6 +241,18 @@ void right_moter_R_fn()
 {
   digitalWrite(right_A_pin, LOW);
   digitalWrite(right_B_pin, HIGH);
+}
+// left_moter_stop_fn
+void left_moter_stop_fn()
+{
+  digitalWrite(left_A_pin, LOW);
+  digitalWrite(left_B_pin, LOW);
+}
+// right_moter_stop_fn
+void right_moter_stop_fn()
+{
+  digitalWrite(right_A_pin, LOW);
+  digitalWrite(right_B_pin, LOW);
 }
 
 
