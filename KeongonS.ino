@@ -12,6 +12,8 @@ PCB_ver
 #define left_B_pin 7                  // 7번 디지털핀(left_B_pin)               :: MOTER 출력
 #define right_A_pin 12                // 12번 디지털핀(right_A_pin)             :: MOTER 출력
 #define right_B_pin 8                 // 8번 디지털핀(right_B_pin)              :: MOTER 출력
+#define left_pwm_pin 9                // 9번 디지털핀(left_pwm_pin)             :: MOTER PWM
+#define right_pwm_pin 10              // 10번 디지털핀(right_pwm_pin)           :: MOTER PWM
 
 // 아날로그핀 설계
 #define button_pin A0                 // A0번 아날로그핀(button_pin)             :: 푸쉬스위치 입력
@@ -23,6 +25,14 @@ int led_blink_speed = 50;
 
 // 블루투스 받는 문자열
 String bluetooth_string = "";
+
+// 모터 속도 셋팅
+int L_moter_max_speed = 255;          // MOTER speed
+int R_moter_max_speed = 255;          // MOTER speed
+int L_moter_min_speed = 127;          // MOTER speed
+int R_moter_min_speed = 127;          // MOTER speed
+int L_moter_control_speed;            // MOTER speed
+int R_moter_control_speed;            // MOTER speed
 
 
 //-----
@@ -42,6 +52,8 @@ void setup()
   pinMode(left_B_pin, OUTPUT);                // left_B_pin
   pinMode(right_A_pin, OUTPUT);               // right_A_pin
   pinMode(right_B_pin, OUTPUT);               // right_B_pin
+  pinMode(left_pwm_pin, OUTPUT);              // left MOTER PWM
+  pinMode(right_pwm_pin, OUTPUT);             // right MOTER PWM
 
   // LED 모드선택(최초 부팅시)
   blink_fn(button_state_cnt);          
@@ -137,6 +149,19 @@ void BLE_rx_tx_fn()
   { 
     // 실행(1~9)(전화버튼 기준):: ASCII
 
+    // 1 = "49"
+    if (bluetooth_string == "49")
+    {
+      Serial.println("좌전진");
+
+      // BUZZER ON/OFF 함수
+      button_state = 0;
+
+      // L_moter_control_speed
+      L_moter_control_speed = L_moter_min_speed + ((L_moter_max_speed - L_moter_min_speed) / 2);
+      left_moter_F_fn(L_moter_control_speed);
+      right_moter_F_fn(R_moter_max_speed);
+    }
     // 2 = "50"
     if (bluetooth_string == "50")
     {
@@ -145,8 +170,22 @@ void BLE_rx_tx_fn()
       // BUZZER ON/OFF 함수
       button_state = 0;
 
-      left_moter_F_fn();
-      right_moter_F_fn();
+      left_moter_F_fn(L_moter_max_speed);
+      right_moter_F_fn(R_moter_max_speed);
+    }
+
+    // 3 = "51"
+    if (bluetooth_string == "51")
+    {
+      Serial.println("우전진");
+
+      // BUZZER ON/OFF 함수
+      button_state = 0;
+
+      // R_moter_control_speed
+      R_moter_control_speed = R_moter_min_speed + ((R_moter_max_speed - R_moter_min_speed) / 2);
+      left_moter_F_fn(L_moter_max_speed);
+      right_moter_F_fn(R_moter_control_speed);
     }
 
     // 4 = "52"
@@ -158,7 +197,7 @@ void BLE_rx_tx_fn()
       button_state = 0;
 
       left_moter_stop_fn();
-      right_moter_F_fn();
+      right_moter_F_fn(R_moter_max_speed);
     }
 
     // 5 = "53"
@@ -181,9 +220,23 @@ void BLE_rx_tx_fn()
       // BUZZER ON/OFF 함수
       button_state = 0;
 
-      left_moter_F_fn();
+      left_moter_F_fn(L_moter_max_speed);
       right_moter_stop_fn();
     }
+
+    // 7 = "55"
+    else if (bluetooth_string == "55")
+    {
+      Serial.println("좌후진");
+
+      // BUZZER ON/OFF 함수
+      button_state = 1;
+
+      // L_moter_control_speed
+      L_moter_control_speed = L_moter_min_speed + ((L_moter_max_speed - L_moter_min_speed) / 2);
+      left_moter_R_fn(L_moter_control_speed);
+      right_moter_R_fn(R_moter_max_speed);
+    }    
 
     // 8 = "56"
     else if (bluetooth_string == "56")
@@ -193,9 +246,23 @@ void BLE_rx_tx_fn()
       // BUZZER ON/OFF 함수
       button_state = 1;
 
-      left_moter_R_fn();
-      right_moter_R_fn();
+      left_moter_R_fn(L_moter_max_speed);
+      right_moter_R_fn(R_moter_max_speed);
     }
+
+    // 9 = "57"
+    else if (bluetooth_string == "57")
+    {
+      Serial.println("우후진");
+
+      // BUZZER ON/OFF 함수
+      button_state = 1;
+
+      // R_moter_control_speed
+      R_moter_control_speed = R_moter_min_speed + ((R_moter_max_speed - R_moter_min_speed) / 2);
+      left_moter_R_fn(L_moter_max_speed);
+      right_moter_R_fn(R_moter_control_speed);
+    }    
 
     // BUZZER ON/OFF 함수
     buzzer_fn(button_state);          
@@ -219,26 +286,38 @@ AT+NAME이름 (OK+Set:이름)
 //-----
 // MOTER 구동 함수
 // left_moter_F_fn
-void left_moter_F_fn()
+void left_moter_F_fn(int moter_pwm)
 {
+  // 모터 속도 셋팅
+  analogWrite(left_pwm_pin, moter_pwm);
+
   digitalWrite(left_A_pin, HIGH);
   digitalWrite(left_B_pin, LOW);
 }
 // left_moter_R_fn
-void left_moter_R_fn()
+void left_moter_R_fn(int moter_pwm)
 {
+  // 모터 속도 셋팅
+  analogWrite(left_pwm_pin, moter_pwm);
+
   digitalWrite(left_A_pin, LOW);
   digitalWrite(left_B_pin, HIGH);
 }
 // right_moter_F_fn
-void right_moter_F_fn()
+void right_moter_F_fn(int moter_pwm)
 {
+  // 모터 속도 셋팅
+  analogWrite(right_pwm_pin, moter_pwm);
+
   digitalWrite(right_A_pin, HIGH);
   digitalWrite(right_B_pin, LOW);
 }
 // right_moter_R_fn
-void right_moter_R_fn()
+void right_moter_R_fn(int moter_pwm)
 {
+  // 모터 속도 셋팅
+  analogWrite(right_pwm_pin, moter_pwm);
+
   digitalWrite(right_A_pin, LOW);
   digitalWrite(right_B_pin, HIGH);
 }
