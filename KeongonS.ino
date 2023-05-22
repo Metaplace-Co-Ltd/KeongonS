@@ -7,6 +7,7 @@ PCB_ver
 
 // 디지털핀 설계
 #define led_pin 13                    // 13번 디지털핀(led_pin)                 :: LED 출력
+#define buzzer_pin 6                  // 6번 디지털핀(buzzer_pin)               :: BUZZER 출력
 
 // 아날로그핀 설계
 #define button_pin A0                 // A0번 아날로그핀(button_pin)             :: 푸쉬스위치 입력
@@ -24,6 +25,7 @@ void setup()
 
   // 디지털핀 초기화(OUTPUT)
   pinMode(led_pin, OUTPUT);                   // led_pin
+  pinMode(buzzer_pin, OUTPUT);                // buzzer_pin
 }
 // 부팅시 만 실행
 
@@ -48,9 +50,31 @@ void loop()
     }   
     // LED ON/OFF 함수호출
     blink_fn(button_state);
+    // BUZZER ON/OFF 함수
+    buzzer_fn(button_state);
   }
 }
 // 메인 끝
+
+
+//-----
+// BUZZER ON/OFF 함수
+// buzzer_fn
+void buzzer_fn(int button_state)
+{
+    if (button_state == 0)
+    {
+      // BUZZER OFF
+      digitalWrite(buzzer_pin, LOW);
+      Serial.println("BUZZER OFF");
+    }
+    else if (button_state == 1)
+    {
+      // BUZZER ON
+      digitalWrite(buzzer_pin, HIGH);
+      Serial.println("BUZZER ON");    
+    }   
+}
 
 
 //-----
