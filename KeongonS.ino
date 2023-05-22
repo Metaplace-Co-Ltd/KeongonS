@@ -29,6 +29,9 @@ void setup()
   // 시리얼통신 초기화(9600)bps(bits per second)
   Serial.begin(9600);
 
+  //블루투스시리얼[하드웨어] 초기화(9600)bps(bits per second)
+  Serial1.begin(9600);  
+
   // 디지털핀 초기화(OUTPUT)
   pinMode(led_pin, OUTPUT);                   // led_pin
   pinMode(buzzer_pin, OUTPUT);                // buzzer_pin
@@ -84,7 +87,8 @@ void mode_setting_fn(int button_state_cnt)
   // mode setting
   if (button_state_cnt == 0)
   {
-
+    // BLE_rx_tx_fn
+    BLE_rx_tx_fn();
   }
   else if (button_state_cnt == 1)
   {
@@ -98,6 +102,30 @@ void mode_setting_fn(int button_state_cnt)
   {
 
   }
+}
+
+
+//-----
+// BLE_rx_tx_fn
+void BLE_rx_tx_fn()
+{
+  // 블루투스시리얼[하드웨어] 명령 수신
+  if (Serial1.available())
+  { // Serial1[하드웨어] 값이 있으면
+    Serial.write(Serial1.read());       //블루투스측 내용을 시리얼모니터에 출력
+  }
+
+/*
+"No line ending [9600 baud]"
+AT  (OK)
+AT+NAME이름 (OK+Set:이름)
+*/
+
+  // 시리얼통신 명령 수신
+  if (Serial.available())
+  {
+    Serial1.write(Serial.read());  // 시리얼모니터 내용을 블루투스측에 출력
+  }    
 }
 
 
