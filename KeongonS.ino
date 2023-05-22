@@ -18,6 +18,8 @@ PCB_ver
 
 // 버튼상태 변수 선언
 int button_state = 0;
+int button_state_cnt = 0;
+int led_blink_speed = 50;
 
 
 //-----
@@ -34,6 +36,9 @@ void setup()
   pinMode(left_B_pin, OUTPUT);                // left_B_pin
   pinMode(right_A_pin, OUTPUT);               // right_A_pin
   pinMode(right_B_pin, OUTPUT);               // right_B_pin
+
+  // LED 모드선택(최초 부팅시)
+  blink_fn(button_state_cnt);          
 }
 // 부팅시 만 실행
 
@@ -45,30 +50,55 @@ void loop()
   // 모드스위치(푸쉬스위치) 눌림 512이상 입력값 생성 :: 아날로그 입력값[0~1023]
   if (analogRead(button_pin) > 512)
   {
+    // 모드 선택시
+    // LED OFF
+    digitalWrite(led_pin, LOW);    
+    // button_state_cnt 누적 더하기
+    button_state_cnt += 1;
+
     // 모드스위치(푸쉬스위치) 누르고 기다리는 시간
     delay(500);
 
-    if (button_state == 0)
+    // 모드 처음부터 다시 시작
+    if (button_state_cnt == 4)
     {
-      button_state = 1;
-      // MOTER 후진
-      left_moter_R_fn();
-      right_moter_R_fn();      
-   }
-    else if (button_state == 1)
-    {
-      button_state = 0;
-      // MOTER 전진
-      left_moter_F_fn();
-      right_moter_F_fn();
-    }   
-    // LED ON/OFF 함수호출
-    blink_fn(button_state);
-    // BUZZER ON/OFF 함수
-    buzzer_fn(button_state);
+      button_state_cnt = 0;
+    }
+    // 시리얼 프린터 알림
+    Serial.println(button_state_cnt);
+    // LED 깜박임
+    blink_fn(button_state_cnt);
   }
+
+  // mode setting:
+  mode_setting_fn(button_state_cnt);
 }
 // 메인 끝
+
+
+//-----
+// 모드 셋팅 함수
+// mode_setting_fn
+void mode_setting_fn(int button_state_cnt)
+{
+  // mode setting
+  if (button_state_cnt == 0)
+  {
+
+  }
+  else if (button_state_cnt == 1)
+  {
+
+  }
+  else if (button_state_cnt == 2)
+  {
+
+  }
+  else if (button_state_cnt == 3)
+  {
+
+  }
+}
 
 
 //-----
@@ -122,18 +152,17 @@ void buzzer_fn(int button_state)
 //-----
 // LED ON/OFF 함수
 // blink_fn
-void blink_fn(int button_state)
+void blink_fn(int button_state_cnt)
 {
-    if (button_state == 0)
-    {
-      // LED OFF
-      digitalWrite(led_pin, LOW);
-      Serial.println("LED OFF");
-    }
-    else if (button_state == 1)
-    {
-      // LED ON   
-      digitalWrite(led_pin, HIGH);
-      Serial.println("LED ON");
-    }   
+  for (int i = 0; i < button_state_cnt; i++)
+  {
+    // LED ON      
+    digitalWrite(led_pin, HIGH);
+    delay(led_blink_speed);   
+    // LED OFF
+    digitalWrite(led_pin, LOW);
+    delay(led_blink_speed);   
+  }
+  // LED ON    
+  digitalWrite(led_pin, HIGH);
 }
