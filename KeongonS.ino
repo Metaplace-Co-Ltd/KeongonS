@@ -21,6 +21,9 @@ int button_state = 0;
 int button_state_cnt = 0;
 int led_blink_speed = 50;
 
+// 블루투스 받는 문자열
+String bluetooth_string = "";
+
 
 //-----
 // 부팅시 만 실행
@@ -51,8 +54,12 @@ void setup()
 void loop()
 {
   // 모드스위치(푸쉬스위치) 눌림 512이상 입력값 생성 :: 아날로그 입력값[0~1023]
-  if (analogRead(button_pin) > 512)
+  // 블루투스시리얼 0 => ASCII["48"]
+  if ((analogRead(button_pin) > 512) || (bluetooth_string == "48"))
   {
+    // 블루투스 받는 문자열 초기화
+    bluetooth_string = "";
+
     // 모드 선택시
     // LED OFF
     digitalWrite(led_pin, LOW);    
@@ -69,8 +76,18 @@ void loop()
     }
     // 시리얼 프린터 알림
     Serial.println(button_state_cnt);
+    // 블루투스시리얼[하드웨어] 프린터 알림
+    Serial1.println(button_state_cnt);    
     // LED 깜박임
     blink_fn(button_state_cnt);
+  }
+
+  // 블루투스시리얼[하드웨어] 명령 수신
+  if (Serial1.available())
+  { // Serial1[하드웨어] 값이 있으면
+    bluetooth_string = Serial1.read();  // 블루투스측 내용 저장
+    // 0 => ASCII["48"]
+    // Serial.println(bluetooth_string);
   }
 
   // mode setting:
